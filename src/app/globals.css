@@ -24,3 +24,8 @@ body {
     text-wrap: balance;
   }
 }
+
+.card {
+  @apply flex flex-col items-center py-10 p-3 bg-white rounded-lg cursor-pointer;
+  @apply dark:bg-gray-800 text-gray-100;
+}

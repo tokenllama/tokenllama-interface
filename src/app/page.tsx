@@ -26,7 +26,7 @@ export default function Home() {
           "bg-white bg-opacity-60 backdrop-blur fixed top-0 w-full h-[72px] flex items-center"
         }
       >
-        <div className="container mx-auto flex items-center">
+        <div className="container mx-auto flex items-center px-6">
           <div className="flex items-center gap-2">
             <Image src={"/logo.png"} alt={"logo"} width={42} height={42} />
             <div className={"font-extrabold italic text-xl"}>TokenLlama</div>
@@ -34,15 +34,10 @@ export default function Home() {
           <div className="ml-auto"></div>
         </div>
       </header>
-      <div className={"container mx-auto pt-28"}>
-        <div className="grid grid-cols-4 gap-10">
+      <div className={"container mx-auto pt-28 px-6"}>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           {tokens?.map((token) => (
-            <div
-              key={token?.address}
-              className={
-                "flex flex-col items-center py-10 p-3 bg-white rounded-lg cursor-pointer"
-              }
-            >
+            <div key={token?.address} className={"card"}>
               <Image
                 src={token?.logoURI}
                 alt={token.symbol}

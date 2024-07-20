@@ -5,20 +5,29 @@ import { useEffect, useState } from 'react';
 import { Token } from '@/types/token';
 import { ellipseAddress } from '@/utils/display';
 import { CopyIcon } from '@radix-ui/react-icons';
-import { ChainBNBIcon, ChainEthereumIcon, ChainPolygonIcon, EtherscanIcon, MetamaskIcon } from 'web3-icons';
-import { watchAsset } from 'viem/actions';
-import { config } from '@/wagmi';
-import { toast } from 'sonner';
+import { ChainBNBIcon, ChainEthereumIcon, ChainIcon, ChainPolygonIcon, EtherscanDarkIcon, EtherscanIcon, MetamaskIcon } from 'web3-icons';
 import Link from 'next/link';
 import { getTokenScanLink } from '@/utils/link';
 import { bsc, mainnet, polygon } from 'viem/chains';
-import { useTheme } from 'next-themes';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { NumberParam, useQueryParam, withDefault } from 'use-query-params';
+import { useToast } from '@/components/ui/use-toast';
+import { extractChain } from 'viem';
+import { Header } from '@/components/header';
+import { useAccount, useConnect, useSwitchChain, useWatchAsset } from 'wagmi';
+import { useConnectModal } from '@rainbow-me/rainbowkit';
+import theme from 'tailwindcss/defaultTheme';
+import { useTheme } from 'next-themes';
 
 export default function Home() {
+  const { toast } = useToast();
   const [tokens, setTokens] = useState<Token[]>([]);
   const [chainId, setChainId] = useQueryParam('chain_id', withDefault(NumberParam, mainnet.id));
+  const { watchAsset } = useWatchAsset();
+  const { address } = useAccount();
+  const { openConnectModal } = useConnectModal();
+  const { chains, switchChain } = useSwitchChain();
+  const { chainId: currentChainId } = useAccount();
 
   useEffect(() => {
     if (chainId === polygon.id) {
@@ -49,23 +58,13 @@ export default function Home() {
     }
   }, [chainId]);
 
-  const { setTheme } = useTheme();
+  const { theme } = useTheme();
 
   return (
     <>
-      <header className={'bg-white dark:bg-background bg-opacity-60 backdrop-blur fixed top-0 w-full h-[72px] flex items-center'}>
-        <div className="container mx-auto flex items-center px-6">
-          <div className="flex items-center gap-2">
-            <Image src={'/logo.png'} alt={'logo'} width={42} height={42} />
-            <div className={'font-extrabold italic text-xl'}>TokenLlama</div>
-          </div>
-          <div className="ml-auto">
-            <button onClick={() => setTheme('dark')}>Dark</button>
-          </div>
-        </div>
-      </header>
+      <Header />
       <div className="px-6">
-        <div className="w-[1000px] max-w-full mx-auto mt-28 pb-20">
+        <div className="w-[1200px] max-w-full mx-auto mt-28 pb-20">
           <div className="flex justify-end mb-6">
             <Select defaultValue={mainnet.id.toString()} value={chainId.toString()} onValueChange={(id: string) => setChainId(Number(id))}>
               <SelectTrigger className="w-[180px]" defaultValue={'ethereum'}>
@@ -90,29 +89,54 @@ export default function Home() {
               </SelectContent>
             </Select>
           </div>
-          <div className={'bg-white dark:bg-background rounded-2xl border border-gray-700'}>
-            <div className={'font-semibold flex items-center gap-2 mb-4 px-6 pt-6 mb-4 text-xl'}>
-              <ChainEthereumIcon width={26} height={26} />
-              Ethereum ({tokens.length})
+          <div className={'bg-white dark:bg-background rounded-2xl border border-gray-200 dark:border-input px-6'}>
+            <div className={'flex items-center justify-end2 gap-2 px-6 pt-6 mb-10 text-sm'}>{tokens.length} Tokens</div>
+            <div className={'flex items-center text-sm px-6 text-gray-500 mb-2'}>
+              <div className={'w-[5%]'}>#</div>
+              <div className={'w-[25%]'}>Token</div>
+              <div className={'w-[10%]'}>Decimals</div>
+              <div className={'w-[10%]'}>Chain</div>
             </div>
-            {tokens?.map((token) => (
+            {tokens?.map((token, i) => (
               <div
                 key={token?.address}
-                className={'flex items-center px-6 py-4 cursor-pointer hover:bg-background transition-all duration-300'}
+                className={
+                  'flex items-center px-6 py-3 cursor-pointer rounded-2xl hover:bg-gray-300 dark:hover:bg-hover hover:bg-opacity-20 transition-all duration-300 text-xs'
+                }
               >
-                <Image src={token?.logoURI} alt={token.symbol} width={26} height={26} className={'rounded-full mr-3'} />
-                <div className={'font-semibold text-sm'}>{token.symbol}</div>
+                <div className={'w-[5%] text-gray-500'}>{i + 1}</div>
+                <div className={'w-[25%] flex items-center'}>
+                  <Image src={token?.logoURI} alt={token.symbol} width={26} height={26} className={'rounded-full mr-3'} />
+                  <div>
+                    <div className={'text-sm'}>{token.symbol}</div>
+                    <div className={'text-gray-400 text-[10px]'}>{token.name}</div>
+                  </div>
+                </div>
 
-                <div className={'flex items-center text-[10px] gap-2 text-gray-500 ml-auto '}>
+                <div className={'w-[10%]'}>{token.decimals}</div>
+
+                <div className={'w-[10%]'}>
+                  <ChainIcon chainId={chainId} width={16} height={16} />
+                </div>
+
+                <div className={'flex items-center text-[10px] gap-6 ml-auto '}>
                   <Link href={getTokenScanLink(chainId, token.address)} target={'_blank'}>
-                    <EtherscanIcon />
+                    {theme === 'dark' ? <EtherscanDarkIcon /> : <EtherscanIcon />}
                   </Link>
-                  <ChainEthereumIcon />
                   <MetamaskIcon
                     width={12}
                     height={12}
                     onClick={() => {
-                      watchAsset(config.getClient(), {
+                      if (!address) {
+                        openConnectModal?.();
+                        return;
+                      }
+
+                      if (chainId !== currentChainId) {
+                        switchChain({ chainId: chainId });
+                        return;
+                      }
+                      watchAsset({
                         type: 'ERC20',
                         options: {
                           address: token.address,
@@ -127,7 +151,7 @@ export default function Home() {
                     className={'w-3 h-3 cursor-pointer'}
                     onClick={async () => {
                       await navigator.clipboard.writeText(token?.address);
-                      toast.success('Copied');
+                      toast({ title: 'Copied' });
                     }}
                   />
                 </div>

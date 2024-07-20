@@ -70,3 +70,9 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .input {
+    @apply border border-input px-3 py-2 rounded-sm text-xs;
+  }
+}

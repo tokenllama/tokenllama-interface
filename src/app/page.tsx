@@ -28,14 +28,17 @@ export default function Home() {
   const { openConnectModal } = useConnectModal();
   const { chains, switchChain } = useSwitchChain();
   const { chainId: currentChainId } = useAccount();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     if (chainId === polygon.id) {
       fetch('https://tokens.uniswap.org')
         .then((r) => r.json())
         .then((r) => {
           console.log(r);
           setTokens(r.tokens.filter((t: Token) => t.chainId === polygon.id).filter((t: Token) => !t.logoURI.includes('ipfs://')));
+          setLoading(false);
         });
     }
 
@@ -45,6 +48,7 @@ export default function Home() {
         .then((r) => {
           console.log(r);
           setTokens(r.tokens);
+          setLoading(false);
         });
     }
 
@@ -53,7 +57,8 @@ export default function Home() {
         .then((r) => r.json())
         .then((r) => {
           console.log(r);
-          setTokens(r.tokens.slice(0, 100));
+          setTokens(r.tokens.slice(0, 500));
+          setLoading(false);
         });
     }
   }, [chainId]);
@@ -89,74 +94,112 @@ export default function Home() {
               </SelectContent>
             </Select>
           </div>
-          <div className={'bg-white dark:bg-background rounded-2xl border border-gray-200 dark:border-input px-6'}>
-            <div className={'flex items-center justify-end2 gap-2 px-6 pt-6 mb-10 text-sm'}>{tokens.length} Tokens</div>
-            <div className={'flex items-center text-sm px-6 text-gray-500 mb-2'}>
-              <div className={'w-[5%]'}>#</div>
-              <div className={'w-[25%]'}>Token</div>
-              <div className={'w-[10%]'}>Decimals</div>
-              <div className={'w-[10%]'}>Chain</div>
-            </div>
-            {tokens?.map((token, i) => (
-              <div
-                key={token?.address}
-                className={
-                  'flex items-center px-6 py-3 cursor-pointer rounded-2xl hover:bg-gray-300 dark:hover:bg-hover hover:bg-opacity-20 transition-all duration-300 text-xs'
-                }
-              >
-                <div className={'w-[5%] text-gray-500'}>{i + 1}</div>
-                <div className={'w-[25%] flex items-center'}>
-                  <Image src={token?.logoURI} alt={token.symbol} width={26} height={26} className={'rounded-full mr-3'} />
-                  <div>
-                    <div className={'text-sm'}>{token.symbol}</div>
-                    <div className={'text-gray-400 text-[10px]'}>{token.name}</div>
+          <div
+            className={'bg-white dark:bg-background rounded-2xl border border-gray-200 dark:border-input lg:px-6 overflow-x-scroll pb-6'}
+          >
+            <div className={'flex items-center justify-end gap-2 px-6 pt-6 lg:mb-10 mb-6 text-sm'}>{tokens.length} Tokens</div>
+            <div className={'min-w-[1000px]'}>
+              <div className={'flex items-center text-sm px-6 text-gray-500 mb-2'}>
+                <div className={'w-[5%]'}>#</div>
+                <div className={'w-[25%]'}>Token</div>
+                <div className={'w-[10%]'}>Decimals</div>
+                <div className={'w-[10%]'}>Chain</div>
+              </div>
+              {loading && (
+                <div className={'text-center py-6'}>
+                  <div
+                    className={
+                      'flex items-center px-6 py-3 cursor-pointer rounded-2xl hover:bg-gray-300 dark:hover:bg-hover hover:bg-opacity-20 transition-all duration-300 text-xs'
+                    }
+                  >
+                    <div className={'w-[5%] '}>
+                      <div className={'bg-gray-100 w-[20px] h-[20px]'} />
+                    </div>
+                    <div className={'w-[25%] flex items-center gap-2'}>
+                      <div className={'w-[32px] h-[32px] rounded-full bg-gray-200 animate-pulse'} />
+                      <div>
+                        <div className={'w-[50px] h-[12px] rounded-sm mb-1 bg-gray-200 animate-pulse'} />
+                        <div className={'w-[100px] h-[12px] rounded-sm bg-gray-200 animate-pulse'} />
+                      </div>
+                    </div>
+                    <div className={'w-[10%] '}>
+                      <div className={'bg-gray-100 w-[20px] h-[20px]'} />
+                    </div>
+                    <div className={'w-[10%] '}>
+                      <div className={'bg-gray-100 w-[20px] h-[20px]'} />
+                    </div>
+                    <div className="ml-auto">
+                      <div className="flex items-center gap-2">
+                        <div className={'bg-gray-100 w-[20px] h-[20px]'} />
+                        <div className={'bg-gray-100 w-[20px] h-[20px]'} />
+                        <div className={'bg-gray-100 w-[20px] h-[20px]'} />
+                      </div>
+                    </div>
                   </div>
                 </div>
+              )}
+              {!loading &&
+                tokens?.map((token, i) => (
+                  <div
+                    key={token?.address}
+                    className={
+                      'flex items-center px-6 py-3 cursor-pointer rounded-2xl hover:bg-gray-300 dark:hover:bg-hover hover:bg-opacity-20 transition-all duration-300 text-xs'
+                    }
+                  >
+                    <div className={'w-[5%] text-gray-500'}>{i + 1}</div>
+                    <div className={'w-[25%] flex items-center'}>
+                      <Image src={token?.logoURI} alt={token.symbol} width={26} height={26} className={'rounded-full mr-3'} />
+                      <div>
+                        <div className={'text-sm'}>{token.symbol}</div>
+                        <div className={'text-gray-400 text-[10px]'}>{token.name}</div>
+                      </div>
+                    </div>
 
-                <div className={'w-[10%]'}>{token.decimals}</div>
+                    <div className={'w-[10%]'}>{token.decimals}</div>
 
-                <div className={'w-[10%]'}>
-                  <ChainIcon chainId={chainId} width={16} height={16} />
-                </div>
+                    <div className={'w-[10%]'}>
+                      <ChainIcon chainId={chainId} width={16} height={16} />
+                    </div>
 
-                <div className={'flex items-center text-[10px] gap-6 ml-auto '}>
-                  <Link href={getTokenScanLink(chainId, token.address)} target={'_blank'}>
-                    {theme === 'dark' ? <EtherscanDarkIcon /> : <EtherscanIcon />}
-                  </Link>
-                  <MetamaskIcon
-                    width={12}
-                    height={12}
-                    onClick={() => {
-                      if (!address) {
-                        openConnectModal?.();
-                        return;
-                      }
+                    <div className={'flex items-center text-[10px] gap-6 ml-auto '}>
+                      <Link href={getTokenScanLink(chainId, token.address)} target={'_blank'}>
+                        {theme === 'dark' ? <EtherscanDarkIcon /> : <EtherscanIcon />}
+                      </Link>
+                      <MetamaskIcon
+                        width={12}
+                        height={12}
+                        onClick={() => {
+                          if (!address) {
+                            openConnectModal?.();
+                            return;
+                          }
 
-                      if (chainId !== currentChainId) {
-                        switchChain({ chainId: chainId });
-                        return;
-                      }
-                      watchAsset({
-                        type: 'ERC20',
-                        options: {
-                          address: token.address,
-                          decimals: token.decimals,
-                          symbol: token.symbol,
-                        },
-                      });
-                    }}
-                  />
-                  {ellipseAddress(token?.address, 6)}
-                  <CopyIcon
-                    className={'w-3 h-3 cursor-pointer'}
-                    onClick={async () => {
-                      await navigator.clipboard.writeText(token?.address);
-                      toast({ title: 'Copied' });
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
+                          if (chainId !== currentChainId) {
+                            switchChain({ chainId: chainId });
+                            return;
+                          }
+                          watchAsset({
+                            type: 'ERC20',
+                            options: {
+                              address: token.address,
+                              decimals: token.decimals,
+                              symbol: token.symbol,
+                            },
+                          });
+                        }}
+                      />
+                      {ellipseAddress(token?.address, 6)}
+                      <CopyIcon
+                        className={'w-3 h-3 cursor-pointer'}
+                        onClick={async () => {
+                          await navigator.clipboard.writeText(token?.address);
+                          toast({ title: 'Copied' });
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+            </div>
           </div>
         </div>
       </div>

@@ -23,7 +23,7 @@ export const ConnectorButton = () => {
             {(() => {
               if (!connected) {
                 return (
-                  <button onClick={openConnectModal} type="button">
+                  <button onClick={openConnectModal} type="button" className={'input'}>
                     Connect Wallet
                   </button>
                 );
@@ -49,7 +49,7 @@ export const ConnectorButton = () => {
                       </div>
                     )}
                   </button>
-                  <button onClick={openAccountModal} className={'border border-input px-3 py-2 rounded-sm text-xs'} type="button">
+                  <button onClick={openAccountModal} className={'input'} type="button">
                     {account.displayName}
                   </button>
                 </div>
